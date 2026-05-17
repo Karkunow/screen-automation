@@ -143,21 +143,32 @@ def _ocr_detect() -> bool | None:
         ).lower()
         print(f"  [OCR] прочитано: {text!r}")
 
-        # "Found" patterns: "1 of 5", "1 з 5", "1 из 5", etc.
-        # First number must be >= 1 — "0 of 0" means no results.
-        if re.search(r"[1-9]\d*\s*(of|з|из)\s*[1-9]\d*", text):
-            print("  [OCR] патерн: ЗНАЙДЕНО")
-            return True
+        # Match "count sep total" pattern.
+        # Handles standard: "1 of 5", "1 з 5", "1 із 5", "1 из 5"
+        # Handles OCR misreads of "із": "i", "iз", "i3" (з→3)
+        #   e.g. "0 із 30" → OCR → "0i30"  (sep="i", total="30")
+        #        "0 із 30" → OCR → "0i330" (sep="i3", total="0" — count still 0)
+        # In both cases count==0 → NOT FOUND; count>0 → FOUND.
+        m = re.search(
+            r"(\d+)\s*(?:of|із|iз|i3|з\b|из|i(?=\d))\s*(\d+)",
+            text, re.IGNORECASE
+        )
+        if m:
+            count = int(m.group(1))
+            if count > 0:
+                print("  [OCR] патерн: ЗНАЙДЕНО")
+                return True
+            else:
+                print("  [OCR] патерн: НЕ ЗНАЙДЕНО")
+                return False
 
-        # "Not found" patterns
+        # Fallback text patterns (no counter visible at all)
         no_match = [
             "no result", "no match",
-            "0 of 0", "0 з 0", "0 из 0",
-            "0 of", "0 з",
             "збігів немає", "не знайдено", "нет результ",
         ]
         if any(p in text for p in no_match):
-            print(f"  [OCR] патерн: НЕ ЗНАЙДЕНО")
+            print("  [OCR] патерн: НЕ ЗНАЙДЕНО")
             return False
         print("  [OCR] неоднозначно, переходимо до fallback")
 
