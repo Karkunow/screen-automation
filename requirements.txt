@@ -1,0 +1,16 @@
+# ── Core (all platforms) ──────────────────────────────────────────────────────
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+Pillow>=10.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Optional but recommended — enables OCR-based find-result detection.
+# Requires Tesseract to be installed separately:
+#   macOS  :  brew install tesseract
+#   Windows:  https://github.com/UB-Mannheim/tesseract/wiki
+pytesseract>=0.3.10
+
+# ── Windows only ─────────────────────────────────────────────────────────────
+# Uncomment the line below when running on Windows.
+# pygetwindow>=0.0.9

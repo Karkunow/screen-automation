@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# macOS
+.DS_Store
+
+# Project: local calibration images (machine-specific)
+img/
+
+# Debug screenshots (generated at runtime)
+debug_*.png
+
+# Logs
+results_log.txt

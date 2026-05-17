@@ -1,0 +1,20 @@
+{
+  "platform": "mac",
+  "row_count": 50,
+  "checkbox_offset": 1,
+  "delays": {
+    "window_switch": 0.7,
+    "after_copy": 0.4,
+    "after_search_open": 0.7,
+    "after_search_type": 1.1,
+    "after_mark": 0.35
+  },
+  "ipn_cell_x": 600,
+  "ipn_cell_y": 240,
+  "find_bar_region": [
+    1146,
+    296,
+    1307,
+    322
+  ]
+}
