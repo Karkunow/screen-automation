@@ -26,9 +26,9 @@ python --version
    (файл виглядає як `tesseract-ocr-w64-setup-5.x.x.exe`)
 2. Під час встановлення додатково вибери мовні пакети: **Ukrainian** та **English**
 3. Запам'ятай шлях встановлення (зазвичай `C:\Program Files\Tesseract-OCR`)
-4. Додай цей шлях до змінної середовища PATH — виконай у CMD від імені адміністратора:
+4. Додай Tesseract до PATH — виконай у CMD від імені адміністратора:
    ```
-   setx PATH "%PATH%;C:\Program Files\Tesseract-OCR" /M
+   setx PATH "%PATH%;%ProgramFiles%\Tesseract-OCR" /M
    ```
    Після цього **закрий і відкрий CMD заново**.
 
