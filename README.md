@@ -26,11 +26,16 @@ python --version
    (файл виглядає як `tesseract-ocr-w64-setup-5.x.x.exe`)
 2. Під час встановлення додатково вибери мовні пакети: **Ukrainian** та **English**
 3. Запам'ятай шлях встановлення (зазвичай `C:\Program Files\Tesseract-OCR`)
-4. Додай Tesseract до PATH — виконай у CMD від імені адміністратора:
+4. Додай Tesseract до PATH — відкрий **PowerShell від імені адміністратора** та виконай:
+   ```powershell
+   [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path","Machine") + ";$env:ProgramFiles\Tesseract-OCR", "Machine")
    ```
-   setx PATH "%PATH%;%ProgramFiles%\Tesseract-OCR" /M
-   ```
-   Після цього **закрий і відкрий CMD заново**.
+   Після цього **закрий і відкрий PowerShell/CMD заново**.
+
+   > **Якщо без прав адміністратора** — виконай у звичайному PowerShell (додасть у PATH поточного користувача):
+   > ```powershell
+   > [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path","User") + ";$env:ProgramFiles\Tesseract-OCR", "User")
+   > ```
 
 Перевір у CMD:
 ```
