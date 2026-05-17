@@ -26,11 +26,12 @@ def click_and_read(row: int, x: int, y: int, copy_delay: float = 0.4) -> str:
         print(f"  → рухаємося вниз до рядка {row + 1}…", flush=True)
         move_down()
         print(f"  → редагуємо рядок {row + 1}…", flush=True)
-        pyautogui.hotkey("optionleft", "enter")
+        if sys.platform == "darwin":
+            pyautogui.hotkey("option", "enter")
     print(f"  → виділяємо текст {_MOD} + А {row + 1}…", flush=True)
-    pyautogui.hotkey("ctrl", "a")
+    if sys.platform == "darwin":
+        pyautogui.hotkey("ctrl", "a")
     time.sleep(0.1)
-    pyautogui.hotkey(_MOD, "a")
     return read_current_cell(copy_delay=copy_delay)
 
 
@@ -39,7 +40,8 @@ def read_current_cell(copy_delay: float = 0.4) -> str:
     time.sleep(0.1)
     pyautogui.hotkey(_MOD, "c")
     time.sleep(copy_delay)
-    pyautogui.press("escape")      # прибрати фокус з попередньої клітинки
+    if sys.platform == "darwin":
+        pyautogui.press("escape")      # прибрати фокус з попередньої клітинки
     return _normalize(pyperclip.paste().strip())
 
 
