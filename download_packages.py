@@ -38,7 +38,7 @@ PY_TARGET = "3.12"
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def get_latest_python(series: str) -> str:
-    """Fetch the latest patch version of Python *series* (e.g. '3.12')."""
+    """Fetch the latest patch version of Python *series* that has a Windows installer."""
     url = "https://www.python.org/ftp/python/"
     with urllib.request.urlopen(url, timeout=15) as resp:
         html = resp.read().decode()
@@ -46,7 +46,16 @@ def get_latest_python(series: str) -> str:
     versions = re.findall(rf'href="({prefix}\.\d+)/"', html)
     if not versions:
         raise RuntimeError(f"Не знайдено версій Python {series}")
-    return sorted(versions, key=lambda v: [int(x) for x in v.split(".")])[-1]
+    # Check versions from newest to oldest; return first that has an amd64 installer
+    for ver in sorted(versions, key=lambda v: [int(x) for x in v.split(".")], reverse=True):
+        exe_url = f"https://www.python.org/ftp/python/{ver}/python-{ver}-amd64.exe"
+        try:
+            req = urllib.request.Request(exe_url, method="HEAD")
+            with urllib.request.urlopen(req, timeout=10):
+                return ver
+        except Exception:
+            continue
+    raise RuntimeError(f"Не знайдено робочого інсталятора Python {series}")
 
 
 def download(url: str, dest: Path) -> None:
@@ -64,12 +73,58 @@ def download(url: str, dest: Path) -> None:
     print(f" {dest.stat().st_size / 1_048_576:.1f} МБ")
 
 
-def pip_download(extra_args: list[str]) -> bool:
-    cmd = [sys.executable, "-m", "pip", "download",
-           "-r", str(ROOT / "requirements.txt"),
-           "-d", str(PACKAGES),
-           *extra_args]
-    return subprocess.run(cmd).returncode == 0
+def download_all_packages() -> None:
+    """Download Python packages for Windows x64 / Python 3.12.
+
+    Per-package strategy:
+      1. Try binary wheel (win_amd64)  — for numpy, Pillow, opencv, etc.
+      2. Fall back to platform-agnostic — for pure-Python packages
+         like pyautogui (sdist only), pyperclip, pytesseract, pygetwindow.
+    """
+    req_file = ROOT / "requirements.txt"
+    specs = [
+        line.strip()
+        for line in req_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+    dest = str(PACKAGES)
+    errors: list[str] = []
+
+    for spec in specs:
+        pkg_name = re.split(r"[><=!@]", spec)[0].strip()
+        # Attempt 1: binary wheel for Windows
+        r = subprocess.run(
+            [sys.executable, "-m", "pip", "download", spec,
+             "-d", dest,
+             "--platform", "win_amd64",
+             "--python-version", PY_TARGET,
+             "--only-binary", ":all:",
+             "--quiet"],
+            capture_output=True,
+        )
+        if r.returncode == 0:
+            print(f"  {pkg_name:30s} wheel (win_amd64)")
+            continue
+
+        # Attempt 2: platform-agnostic (pure Python / sdist)
+        r2 = subprocess.run(
+            [sys.executable, "-m", "pip", "download", spec,
+             "-d", dest,
+             "--quiet"],
+            capture_output=True,
+        )
+        if r2.returncode == 0:
+            print(f"  {pkg_name:30s} sdist / pure-python")
+        else:
+            print(f"  {pkg_name:30s} ПОМИЛКА")
+            errors.append(r2.stderr.decode(errors="replace").strip())
+
+    if errors:
+        print("\n  Не вдалось завантажити:")
+        for e in errors:
+            print(f"    {e}")
+        sys.exit(1)
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -94,17 +149,7 @@ def main() -> None:
 
     # 3. Python wheels for Windows x64 / Python 3.12
     print(f"\n=== [3/3] Python пакети (win_amd64 / Python {PY_TARGET}) ===")
-    ok = pip_download([
-        "--platform", "win_amd64",
-        "--python-version", PY_TARGET,
-        "--only-binary", ":all:",
-    ])
-    if not ok:
-        print("  Деякі пакети не мають готових wheels, завантажуємо source...")
-        pip_download([
-            "--platform", "win_amd64",
-            "--python-version", PY_TARGET,
-        ])
+    download_all_packages()
 
     print("\n" + "=" * 52)
     print("  Готово! Далі:")
