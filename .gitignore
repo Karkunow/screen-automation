@@ -15,3 +15,7 @@ debug_*.png
 
 # Logs
 results_log.txt
+
+# Offline installer assets (large binary files — run download_packages.py to generate)
+installers/
+packages/
