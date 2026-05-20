@@ -107,10 +107,12 @@ def download_all_packages() -> None:
             print(f"  {pkg_name:30s} wheel (win_amd64)")
             continue
 
-        # Attempt 2: platform-agnostic (pure Python / sdist)
+        # Attempt 2: pure-Python wheel/sdist targeting Windows
         r2 = subprocess.run(
             [sys.executable, "-m", "pip", "download", spec,
              "-d", dest,
+             "--platform", "win_amd64",
+             "--python-version", PY_TARGET,
              "--quiet"],
             capture_output=True,
         )
@@ -149,6 +151,17 @@ def main() -> None:
 
     # 3. Python wheels for Windows x64 / Python 3.12
     print(f"\n=== [3/3] Python пакети (win_amd64 / Python {PY_TARGET}) ===")
+    # setuptools + wheel needed to build sdist packages offline
+    for build_dep in ("setuptools", "wheel"):
+        subprocess.run(
+            [sys.executable, "-m", "pip", "download", build_dep,
+             "-d", str(PACKAGES),
+             "--platform", "win_amd64",
+             "--python-version", PY_TARGET,
+             "--only-binary", ":all:",
+             "--quiet"],
+            capture_output=True,
+        )
     download_all_packages()
 
     print("\n" + "=" * 52)
