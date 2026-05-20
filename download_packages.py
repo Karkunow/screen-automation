@@ -107,12 +107,10 @@ def download_all_packages() -> None:
             print(f"  {pkg_name:30s} wheel (win_amd64)")
             continue
 
-        # Attempt 2: pure-Python wheel/sdist targeting Windows
+        # Attempt 2: no platform constraint — gets pure-Python wheels/sdists
         r2 = subprocess.run(
             [sys.executable, "-m", "pip", "download", spec,
              "-d", dest,
-             "--platform", "win_amd64",
-             "--python-version", PY_TARGET,
              "--quiet"],
             capture_output=True,
         )
@@ -121,6 +119,14 @@ def download_all_packages() -> None:
         else:
             print(f"  {pkg_name:30s} ПОМИЛКА")
             errors.append(r2.stderr.decode(errors="replace").strip())
+
+    # Remove macOS-specific packages that got pulled as side-effects
+    for f in PACKAGES.glob("*macos*"):
+        f.unlink()
+    for f in PACKAGES.glob("pyobjc*"):
+        f.unlink()
+    for f in PACKAGES.glob("rubicon_objc*"):
+        f.unlink()
 
     if errors:
         print("\n  Не вдалось завантажити:")
