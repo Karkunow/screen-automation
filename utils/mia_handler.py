@@ -152,10 +152,11 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     cell_h = max(1, cell_br[1] - cell_tl[1])
     print(f"  [BLUE] колонка в координатах вікна: x={x1}..{x2} (ширина {x2-x1}px), win_offset=({win_left},{win_top})")
 
-    # Dark navy-blue mask
+    # Dark navy-blue mask  (HSV: H 95-125, S 80-255, V 40-255)
+    # V extended to 255 — Windows selection blue can be bright (V ~180-220)
     mask = cv2.inRange(img_hsv,
-                       np.array([95, 80, 40]),
-                       np.array([125, 255, 180]))
+                       np.array([95, 60, 40]),
+                       np.array([125, 255, 255]))
     total_blue_px = int(cv2.countNonZero(mask))
     print(f"  [BLUE] всього синіх пікселів на всьому скріншоті: {total_blue_px}")
 
@@ -164,9 +165,9 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     col_mask[:, x1:x2] = mask[:, x1:x2]
     col_blue_px = int(cv2.countNonZero(col_mask))
 
-    # Find rows with enough blue pixels (at least 30% of column width)
+    # Find rows with enough blue pixels (at least 15% of column width)
     row_sums = col_mask.sum(axis=1)
-    threshold = max(10, int((x2 - x1) * 0.3 * 255))
+    threshold = max(10, int((x2 - x1) * 0.15 * 255))
     blue_rows = np.where(row_sums >= threshold)[0]
     print(f"  [BLUE] синіх пікселів у колонці: {col_blue_px}, поріг на рядок: {threshold}, рядків що проходять: {len(blue_rows)}")
 
