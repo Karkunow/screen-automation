@@ -66,7 +66,15 @@ def main() -> None:
     tooltip_timeout: float = delays.get("tooltip_timeout", 15.0)
 
     _print_banner(row_count, batch_size)
-    input("Натисни Enter для запуску (відлік 3 секунди)…")
+    print(f"[CFG] Excel IPN клітинка : ({ipn_x},{ipn_y})")
+    print(f"[CFG] MIA cell_tl        : {cell_tl}")
+    print(f"[CFG] MIA cell_br        : {cell_br}")
+    print(f"[CFG] checkbox_offset    : {cb_offset}")
+    print(f"[CFG] mia_title          : {mia_title!r}")
+    print(f"[CFG] batch_size         : {batch_size}")
+    print(f"[CFG] tooltip_timeout    : {tooltip_timeout}s")
+    print(f"[CFG] затримки           : {delays}")
+    print()
     for i in range(3, 0, -1):
         print(f"  Старт через {i}…", end="\r", flush=True)
         time.sleep(1)
@@ -81,12 +89,14 @@ def main() -> None:
             label = f"[{row + 1:02d}/{row_count}]"
 
             # ── 1. Read IPN from Excel ────────────────────────────────
+            print(f"{label} ─────────────────────────────")
+            print(f"{label} [XLS] читаємо ІПН з Excel рядок {row+1}...")
             focus_spreadsheet(delay=win_delay)
             ipn = click_and_read(row, ipn_x, ipn_y,
                                  copy_delay=delays.get("after_copy", 0.4))
+            print(f"{label} [XLS] отримано з буфера: {ipn!r}")
 
             if not ipn or not ipn.isdigit():
-                print(f"{label} Порожній рядок або неочікуване значення: {ipn!r} → не знайдено")
                 result = "не знайдено"
                 not_found_count += 1
                 log_rows.append((row + 1, ipn or "", "не знайдено"))
@@ -99,7 +109,8 @@ def main() -> None:
                 type_ipn(ipn, cell_tl, delays)
 
                 print(f"  → чекаємо завершення пошуку…", flush=True)
-                wait_tooltip_gone(mia_title, timeout=tooltip_timeout)
+                wait_tooltip_gone(mia_title, timeout=tooltip_timeout,
+                                  cell_tl=cell_tl, cell_br=cell_br)
 
                 print(f"  → шукаємо синій рядок…", flush=True)
                 row_top_y = find_blue_row(ipn, cell_tl, cell_br, mia_title)
