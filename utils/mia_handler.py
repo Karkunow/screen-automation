@@ -150,7 +150,7 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     x1 = max(0, cell_tl[0] - win_left)
     x2 = min(img_bgr.shape[1], cell_br[0] - win_left)
     cell_h = max(1, cell_br[1] - cell_tl[1])
-    print(f"  [BLUE] колонка в координатах вікна: x={x1}..{x2} (ширина {x2-x1}px), win_offset=({win_left},{win_top})")
+    print(f"  [BLUE] колонка в координатах вікна: x={x1}..{x2} (ширина {x2-x1}px), висота клітинки={cell_h}px, win_offset=({win_left},{win_top})")
 
     # Dark navy-blue mask  (HSV: H 95-125, S 80-255, V 40-255)
     # V extended to 255 — Windows selection blue can be bright (V ~180-220)
@@ -190,7 +190,7 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     prev = int(blue_rows[0])
     for r in blue_rows[1:]:
         r = int(r)
-        if r - prev <= 4:
+        if r - prev <= 8:
             prev = r
         else:
             groups.append((start, prev))
@@ -203,7 +203,9 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
         print(f"  [OCR]  група {idx+1}/{len(groups)}: y={g_start}..{g_end} ({g_end-g_start+1}px висота)")
         # Verify IPN with OCR if available
         if _OCR_AVAILABLE:
-            crop = img_bgr[g_start:g_end + 1, x1:x2]
+            crop_y1 = max(0, g_start - 2)
+            crop_y2 = min(img_bgr.shape[0], crop_y1 + cell_h)
+            crop = img_bgr[crop_y1:crop_y2, x1:x2]
             if crop.size == 0:
                 print(f"  [OCR]  crop порожній — пропускаємо")
                 continue
