@@ -84,11 +84,7 @@ echo   Tesseract встановлено.
 
 :: Додати Tesseract до PATH користувача (без /M, без admin)
 set "TESS_BIN=%ProgramFiles%\Tesseract-OCR"
-powershell -NoProfile -Command ^
-  "$cur = [Environment]::GetEnvironmentVariable('PATH','Machine'); ^
-   if ($cur -notlike '*Tesseract-OCR*') { ^
-     [Environment]::SetEnvironmentVariable('PATH', $cur + ';%TESS_BIN%', 'Machine') ^
-   }" >nul 2>&1
+powershell -NoProfile -Command "$cur = [Environment]::GetEnvironmentVariable('PATH','Machine'); if ($cur -notlike '*Tesseract-OCR*') { [Environment]::SetEnvironmentVariable('PATH', $cur + ';%TESS_BIN%', 'Machine') }" >nul 2>&1
 set "PATH=%PATH%;%TESS_BIN%"
 echo   Tesseract додано до PATH.
 
