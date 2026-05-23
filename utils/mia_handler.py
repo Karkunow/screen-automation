@@ -210,17 +210,22 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
                 print(f"  [OCR]  crop порожній — пропускаємо")
                 continue
             print(f"  [OCR]  crop розмір: {crop.shape[1]}x{crop.shape[0]}px")
-            # Invert: white text on dark background → black text on white
-            inv = cv2.bitwise_not(crop)
-            big = cv2.resize(inv, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-            # Save debug crop
+            # Grayscale + threshold: white text on blue bg → black text on white bg
+            gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+            _, thr = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
+            big = cv2.resize(thr, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+            # Keep last 2 OCR crops (orig + thresholded) with rotation
             try:
-                crop_path = f"debug_ocr_crop_{idx}.png"
-                cv2.imwrite(crop_path, big)
-                print(f"  [OCR]  crop збережено → {crop_path}")
-            except Exception as _e:
-                print(f"  [OCR]  не вдалось зберегти crop: {_e}")
-            pil_img = Image.fromarray(cv2.cvtColor(big, cv2.COLOR_BGR2RGB))
+                import os
+                if os.path.exists("debug_ocr_orig_1.png"):
+                    os.replace("debug_ocr_orig_1.png", "debug_ocr_orig_2.png")
+                if os.path.exists("debug_ocr_thr_1.png"):
+                    os.replace("debug_ocr_thr_1.png", "debug_ocr_thr_2.png")
+                cv2.imwrite("debug_ocr_orig_1.png", crop)
+                cv2.imwrite("debug_ocr_thr_1.png", big)
+            except Exception:
+                pass
+            pil_img = Image.fromarray(big)
             raw = pytesseract.image_to_string(
                 pil_img,
                 config="--psm 7 -c tessedit_char_whitelist=0123456789",
