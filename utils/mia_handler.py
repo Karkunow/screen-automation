@@ -36,16 +36,14 @@ def _get_mia_win(mia_title: str):
         import pygetwindow as gw
         wins = gw.getWindowsWithTitle(mia_title)
         if wins:
-            print(f"  [WIN] знайдено вікно '{mia_title}': {wins[0].left},{wins[0].top} {wins[0].width}x{wins[0].height}")
             return wins[0]
         wins = gw.getWindowsWithTitle("Заробітна плата")
         if wins:
-            print(f"  [WIN] fallback вікно 'Заробітна плата': {wins[0].left},{wins[0].top} {wins[0].width}x{wins[0].height}")
             return wins[0]
         all_titles = [w.title for w in gw.getAllWindows() if w.title.strip()]
         print(f"  [WIN] УВАГА: вікно MIA не знайдено! Всі вікна: {all_titles[:10]}")
     except ImportError:
-        print("  [WIN] pygetwindow не встановлено — скріншот всього екрана")
+        pass
     return None
 
 
@@ -61,13 +59,12 @@ def _screenshot_mia(mia_title: str):
             region = (win.left, win.top, win.width, win.height)
             img = pyautogui.screenshot(region=region)
             img_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-            print(f"  [SCR] скріншот вікна MIA: {img_bgr.shape[1]}x{img_bgr.shape[0]} px, offset=({win.left},{win.top})")
             return img_bgr, win.left, win.top
         except Exception as e:
-            print(f"  [SCR] помилка скріншоту вікна: {e} — беремо весь екран")
+            print(f"  [WIN] помилка скріншоту вікна: {e} — беремо весь екран")
     img = pyautogui.screenshot()
     img_bgr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    print(f"  [SCR] скріншот ВЕСЬ ЕКРАН: {img_bgr.shape[1]}x{img_bgr.shape[0]} px")
+    print(f"  [WIN] УВАГА: скріншот ВЕСЬ ЕКРАН (вікно не знайдено)")
     return img_bgr, 0, 0
 
 
@@ -141,8 +138,6 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     Dark navy-blue row HSV range (OpenCV 0-180 hue):
       H 95-125,  S 80-255,  V 40-180
     """
-    print(f"  [BLUE] шукаємо синій рядок для ІПН={ipn}")
-    print(f"  [BLUE] cell_tl={cell_tl} cell_br={cell_br}")
     img_bgr, win_left, win_top = _screenshot_mia(mia_title)
     img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
 
@@ -150,38 +145,32 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
     x1 = max(0, cell_tl[0] - win_left)
     x2 = min(img_bgr.shape[1], cell_br[0] - win_left)
     cell_h = max(1, cell_br[1] - cell_tl[1])
-    print(f"  [BLUE] колонка в координатах вікна: x={x1}..{x2} (ширина {x2-x1}px), висота клітинки={cell_h}px, win_offset=({win_left},{win_top})")
 
     # Dark navy-blue mask  (HSV: H 95-125, S 80-255, V 40-255)
     # V extended to 255 — Windows selection blue can be bright (V ~180-220)
     mask = cv2.inRange(img_hsv,
                        np.array([95, 60, 40]),
                        np.array([125, 255, 255]))
-    total_blue_px = int(cv2.countNonZero(mask))
-    print(f"  [BLUE] всього синіх пікселів на всьому скріншоті: {total_blue_px}")
 
     # Restrict to IPN column width
     col_mask = np.zeros_like(mask)
     col_mask[:, x1:x2] = mask[:, x1:x2]
-    col_blue_px = int(cv2.countNonZero(col_mask))
 
     # Find rows with enough blue pixels (at least 15% of column width)
     row_sums = col_mask.sum(axis=1)
     threshold = max(10, int((x2 - x1) * 0.15 * 255))
     blue_rows = np.where(row_sums >= threshold)[0]
-    print(f"  [BLUE] синіх пікселів у колонці: {col_blue_px}, поріг на рядок: {threshold}, рядків що проходять: {len(blue_rows)}")
 
-    # Save debug screenshot with marked column
+    # Save debug screenshot with marked column (silent, overwrites each call)
     try:
         dbg = img_bgr.copy()
         cv2.rectangle(dbg, (x1, 0), (x2, dbg.shape[0]), (0, 255, 0), 2)
         cv2.imwrite("debug_blue_search.png", dbg)
-        print(f"  [BLUE] debug скріншот збережено → debug_blue_search.png")
-    except Exception as _e:
-        print(f"  [BLUE] не вдалось зберегти debug скріншот: {_e}")
+    except Exception:
+        pass
 
     if len(blue_rows) == 0:
-        print(f"  [BLUE] синіх рядків не знайдено")
+        print(f"  [OCR] синіх рядків не знайдено (ІПН={ipn})")
         return None
 
     # Collect contiguous groups
@@ -197,19 +186,15 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
             start = r
             prev = r
     groups.append((start, prev))
-    print(f"  [BLUE] знайдено {len(groups)} синіх груп (y-діапазони у вікні): {groups}")
 
     for idx, (g_start, g_end) in enumerate(groups):
-        print(f"  [OCR]  група {idx+1}/{len(groups)}: y={g_start}..{g_end} ({g_end-g_start+1}px висота)")
         # Verify IPN with OCR if available
         if _OCR_AVAILABLE:
             crop_y1 = max(0, g_start - 2)
             crop_y2 = min(img_bgr.shape[0], crop_y1 + cell_h)
             crop = img_bgr[crop_y1:crop_y2, x1:x2]
             if crop.size == 0:
-                print(f"  [OCR]  crop порожній — пропускаємо")
                 continue
-            print(f"  [OCR]  crop розмір: {crop.shape[1]}x{crop.shape[0]}px")
             # Grayscale + threshold: white text on blue bg → black text on white bg
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             _, thr = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
@@ -231,18 +216,17 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
                 config="--psm 7 -c tessedit_char_whitelist=0123456789",
             ).strip()
             digits = "".join(c for c in raw if c.isdigit())
-            match = digits == ipn
-            print(f"  [OCR]  очікую={ipn!r}  raw={raw!r}  digits={digits!r}  збіг={'✓ ТАК' if match else '✗ НІ'}")
-            if not match:
+            if digits != ipn:
+                print(f"  [OCR] очікував {ipn!r} — отримав {raw!r}")
                 continue
         else:
-            print(f"  [OCR]  pytesseract недоступний — приймаємо першу групу без перевірки")
+            print(f"  [OCR] pytesseract недоступний — приймаємо першу групу без перевірки")
 
         abs_y = win_top + g_start
-        print(f"  [BLUE] ✓ підтверджено! абсолютний y={abs_y} (win_top={win_top} + g_start={g_start})")
+        print(f"  [OCR] ✓ знайдено {ipn!r}")
         return abs_y
 
-    print(f"  [OCR] жодна група не підтверджена — повертаємо None")
+    print(f"  [OCR] жодна група не підтверджена для ІПН={ipn}")
     return None
 
 
