@@ -1,20 +1,19 @@
 {
-  "platform": "mac",
+  "platform": "windows",
   "row_count": 50,
-  "checkbox_offset": 1,
+  "batch_size": 20,
   "delays": {
     "window_switch": 0.7,
     "after_copy": 0.4,
-    "after_search_open": 0.7,
-    "after_search_type": 1.1,
-    "after_mark": 0.35
+    "after_type_ipn": 0.5,
+    "tooltip_timeout": 15.0,
+    "batch_confirm_wait": 3.0,
+    "batch_reopen_wait": 12.0
   },
-  "ipn_cell_x": 600,
-  "ipn_cell_y": 240,
-  "find_bar_region": [
-    1146,
-    296,
-    1307,
-    322
-  ]
+  "ipn_cell_x": 0,
+  "ipn_cell_y": 0,
+  "mia_ipn_cell_tl": [0, 0],
+  "mia_ipn_cell_br": [0, 0],
+  "mia_checkbox_offset": [0, 0],
+  "mia_title_part": "Обіймання посад"
 }
