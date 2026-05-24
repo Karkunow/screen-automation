@@ -615,6 +615,7 @@ class App(tk.Tk):
     def _start_automation(self):
         if self._proc is not None:
             return
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
         try:
             self._proc = subprocess.Popen(
                 [self._python_exe(), "automation.py"],
@@ -624,6 +625,7 @@ class App(tk.Tk):
                 encoding="utf-8",
                 errors="replace",
                 creationflags=_CREATE_NO_WINDOW,
+                env=env,
             )
         except Exception as exc:
             messagebox.showerror("Помилка запуску", str(exc), parent=self)
