@@ -152,9 +152,12 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
                        np.array([95, 60, 40]),
                        np.array([125, 255, 255]))
 
-    # Restrict to IPN column width
+    # Restrict to IPN column width, and to main table area only.
+    # The lower panel (e.g. "Дата початку" header) sits in the bottom ~25% of the
+    # window and has the same navy-blue colour — exclude it to avoid false positives.
     col_mask = np.zeros_like(mask)
-    col_mask[:, x1:x2] = mask[:, x1:x2]
+    y_cutoff = int(img_bgr.shape[0] * 0.75)
+    col_mask[:y_cutoff, x1:x2] = mask[:y_cutoff, x1:x2]
 
     # Find rows with enough blue pixels (at least 15% of column width)
     row_sums = col_mask.sum(axis=1)
