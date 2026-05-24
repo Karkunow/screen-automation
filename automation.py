@@ -105,17 +105,24 @@ def main() -> None:
             else:
                 print(f"{label} ІПН: {ipn}", flush=True)
 
-                # ── 2. Search in MIA ──────────────────────────────────
+                # ── 2. Search in MIA (до 2 спроб) ────────────────────
                 focus_mia(mia_title, delay=win_delay)
-                print(f"  → вводимо ІПН у MIA…", flush=True)
-                type_ipn(ipn, cell_tl, delays)
+                row_top_y = None
+                for attempt in range(1, 3):
+                    print(f"  → вводимо ІПН у MIA… (спроба {attempt})", flush=True)
+                    type_ipn(ipn, cell_tl, delays)
 
-                print(f"  → чекаємо завершення пошуку…", flush=True)
-                wait_tooltip_gone(mia_title, timeout=tooltip_timeout,
-                                  cell_tl=cell_tl, cell_br=cell_br)
+                    print(f"  → чекаємо завершення пошуку…", flush=True)
+                    wait_tooltip_gone(mia_title, timeout=tooltip_timeout,
+                                      cell_tl=cell_tl, cell_br=cell_br)
 
-                print(f"  → шукаємо синій рядок…", flush=True)
-                row_top_y = find_blue_row(ipn, cell_tl, cell_br, mia_title, col_br=col_br)
+                    print(f"  → шукаємо синій рядок…", flush=True)
+                    row_top_y = find_blue_row(ipn, cell_tl, cell_br, mia_title, col_br=col_br)
+
+                    if row_top_y is not None:
+                        break
+                    if attempt < 2:
+                        print(f"  → не знайдено з першої спроби — повторюємо…", flush=True)
 
                 if row_top_y is not None:
                     print(f"  → ЗНАЙДЕНО ✓ — ставимо галочку…", flush=True)
