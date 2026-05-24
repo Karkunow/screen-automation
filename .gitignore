@@ -8,7 +8,8 @@ __pycache__/
 .DS_Store
 
 # Project: local calibration images (machine-specific)
-img/
+img/*.png
+!img/icon.ico
 111.jpg
 123.png
 
