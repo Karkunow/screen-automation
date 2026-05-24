@@ -90,7 +90,7 @@ def _move_mouse_away(cell_tl: list, cell_br: list) -> None:
     pyautogui.moveTo(park_x, park_y, duration=0.15)
 
 
-def wait_tooltip_gone(mia_title: str, timeout: float = 15.0,
+def wait_tooltip_gone(mia_title: str, timeout: float = 10.0,
                       cell_tl: list | None = None,
                       cell_br: list | None = None) -> None:
     """Wait until the yellow search tooltip disappears from the MIA window.
