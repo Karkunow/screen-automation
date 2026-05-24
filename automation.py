@@ -15,6 +15,7 @@ Safety
   Move the mouse to the TOP-LEFT corner of the screen at any time to abort.
 """
 
+import datetime
 import json
 import sys
 import time
@@ -80,6 +81,10 @@ def main() -> None:
     for i in range(3, 0, -1):
         print(f"  Старт через {i}…", end="\r", flush=True)
         time.sleep(1)
+    print()
+
+    start_time = datetime.datetime.now()
+    print(f"[ЧАС] Початок: {start_time.strftime('%H:%M:%S')}")
     print()
 
     found_count = 0
@@ -153,6 +158,10 @@ def main() -> None:
     except pyautogui.FailSafeException:
         print("\n\nЗупинено — мишу переміщено у верхній лівий кут (FailSafe).")
 
+    end_time = datetime.datetime.now()
+    elapsed = end_time - start_time
+    elapsed_str = str(elapsed).split(".")[0]  # HH:MM:SS без мікросекунд
+
     # ── Summary ───────────────────────────────────────────────────────────────
     processed = found_count + not_found_count
     print()
@@ -160,9 +169,12 @@ def main() -> None:
     print(f"Оброблено  : {processed} / {row_count}")
     print(f"  Знайдено   : {found_count}")
     print(f"  Не знайдено: {not_found_count}")
+    print(f"[ЧАС] Початок : {start_time.strftime('%H:%M:%S')}")
+    print(f"[ЧАС] Кінець  : {end_time.strftime('%H:%M:%S')}")
+    print(f"[ЧАС] Тривалість: {elapsed_str}")
     print("=" * 52)
 
-    _save_log(log_rows, found_count, not_found_count)
+    _save_log(log_rows, found_count, not_found_count, start_time, end_time, elapsed_str)
     print(f"Лог збережено → {LOG_FILE}")
 
 
@@ -181,9 +193,14 @@ def _print_banner(row_count: int, batch_size: int) -> None:
     print()
 
 
-def _save_log(rows: list, found: int, not_found: int) -> None:
+def _save_log(rows: list, found: int, not_found: int,
+              start_time: datetime.datetime, end_time: datetime.datetime,
+              elapsed_str: str) -> None:
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         f.write("Результати звірки ІПН\n")
+        f.write(f"Початок  : {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Кінець   : {end_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Тривалість: {elapsed_str}\n")
         f.write(f"Знайдено: {found}  |  Не знайдено: {not_found}\n")
         f.write("-" * 38 + "\n")
         f.write(f"{'Рядок':<7} {'ІПН':<13} Статус\n")
