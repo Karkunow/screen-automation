@@ -212,6 +212,8 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             _, thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             big = cv2.resize(thr, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+            # Add white padding so Tesseract doesn't cut off edge digits
+            big = cv2.copyMakeBorder(big, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
             # Keep last 2 OCR crops (orig + thresholded) with rotation
             try:
                 import os
