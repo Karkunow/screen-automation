@@ -9,6 +9,11 @@ __pycache__/
 
 # Project: local calibration images (machine-specific)
 img/
+111.jpg
+123.png
+
+# Local OCR test script
+test_ocr_local.py
 
 # Debug screenshots (generated at runtime)
 debug_*.png
