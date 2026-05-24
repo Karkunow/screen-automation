@@ -207,10 +207,11 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
             crop = img_bgr[crop_y1:crop_y2, x1:x2]
             if crop.size == 0:
                 continue
-            # Grayscale + threshold: white text on blue bg → black text on white bg
+            # Grayscale + Otsu threshold: white text on blue bg → black text on white bg
+            # Otsu finds optimal split between dark-blue bg and bright text automatically
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-            _, thr = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-            big = cv2.resize(thr, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+            _, thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            big = cv2.resize(thr, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
             # Keep last 2 OCR crops (orig + thresholded) with rotation
             try:
                 import os
