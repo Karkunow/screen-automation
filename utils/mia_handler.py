@@ -196,7 +196,10 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
             prev = r
     groups.append((start, prev))
 
+    min_row_h = max(5, cell_h // 2)
     for idx, (g_start, g_end) in enumerate(groups):
+        if g_end - g_start + 1 < min_row_h:
+            continue  # тонка синя межа/лінія таблиці — ігноруємо
         # Verify IPN with OCR if available
         if _OCR_AVAILABLE:
             crop_y1 = max(0, g_start - 2)
