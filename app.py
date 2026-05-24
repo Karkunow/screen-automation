@@ -193,7 +193,8 @@ class CalibrationWizard(tk.Toplevel):
     def __init__(self, parent: tk.Tk, config: dict, on_done):
         super().__init__(parent)
         self.title("Калібрування")
-        self.resizable(False, False)
+        self.resizable(False, True)
+        self.minsize(480, 380)
         self._config = dict(config)
         self._on_done = on_done
         self._step_idx = 0
@@ -242,7 +243,8 @@ class CalibrationWizard(tk.Toplevel):
 
     def _center(self):
         self.update_idletasks()
-        w, h = self.winfo_reqwidth(), self.winfo_reqheight()
+        w = max(self.winfo_reqwidth(), 480)
+        h = max(self.winfo_reqheight(), 380)
         sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
