@@ -123,7 +123,7 @@ def main():
         _beep()
     print()
 
-    # ── Step 3 : MIA — верхній лівий кут ПЕРШОГО рядка колонки ІПН ────────────
+    # ── Step 3 : MIA — верхній лівий кут ПЕРШОЇ клітинки ІПН в МІА ────────────
     print(f"Крок 3 / {total_steps}  —  MIA: верхній лівий кут стовпця ІПН (перший рядок)")
     cur_tl = existing.get("mia_ipn_cell_tl")
     if cur_tl and _ask_skip("mia_ipn_cell_tl", cur_tl):
@@ -137,8 +137,8 @@ def main():
         config["mia_ipn_cell_tl"] = [x, y]
     print()
 
-    # ── Step 4 : MIA — нижній правий кут клітинки ІПН ───────────────────────
-    print(f"Крок 4 / {total_steps}  —  MIA: нижній правий кут клітинки ІПН (той самий перший рядок)")
+    # ── Step 4 : MIA — нижній правий кут ПЕРШОЇ клітинки ІПН ───────────────────────
+    print(f"Крок 4 / {total_steps}  —  MIA: нижній правий кут ПЕРШОЇ клітинки ІПН (той самий перший рядок)")
     cur_br = existing.get("mia_ipn_cell_br")
     if cur_br and _ask_skip("mia_ipn_cell_br", cur_br):
         config["mia_ipn_cell_br"] = cur_br

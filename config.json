@@ -12,8 +12,9 @@
   },
   "ipn_cell_x": 0,
   "ipn_cell_y": 0,
-  "mia_ipn_cell_tl": [0, 0],
-  "mia_ipn_cell_br": [0, 0],
+  "mia_ipn_cell_tl": [1100, 60],
+  "mia_ipn_cell_br": [1220, 77],
+  "mia_ipn_col_br": [1220, 760],
   "mia_checkbox_offset": [0, 0],
   "mia_title_part": "Обіймання посад"
 }
