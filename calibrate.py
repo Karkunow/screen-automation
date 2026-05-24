@@ -61,7 +61,7 @@ def _capture_pos(prompt: str) -> tuple[int, int]:
 def main():
     is_mac = sys.platform == "darwin"
     spreadsheet_app = "Numbers" if is_mac else "Excel"
-    total_steps = 5 if is_mac else 6
+    total_steps = 6 if is_mac else 7
 
     print("=" * 52)
     print("   Автоматизація екрану — Калібрування")
@@ -123,41 +123,55 @@ def main():
         _beep()
     print()
 
-    # ── Step 3 : MIA — верхній лівий кут клітинки ІПН ───────────────────────
-    print(f"Крок 3 / {total_steps}  —  MIA: верхній лівий кут клітинки ІПН")
+    # ── Step 3 : MIA — верхній лівий кут ПЕРШОГО рядка колонки ІПН ────────────
+    print(f"Крок 3 / {total_steps}  —  MIA: верхній лівий кут стовпця ІПН (перший рядок)")
     cur_tl = existing.get("mia_ipn_cell_tl")
     if cur_tl and _ask_skip("mia_ipn_cell_tl", cur_tl):
         config["mia_ipn_cell_tl"] = cur_tl
         print(f"  → збережено попереднє {cur_tl}")
     else:
         print("  1. Переключись на вікно MIA ('Обіймання посад').")
-        print("  2. Знайди будь-який рядок у колонці 'Ідентифікатор'.")
-        print("  3. Наведи мишу на ВЕРХНІЙ ЛІВИЙ кут тієї клітинки.")
-        x, y = _capture_pos("Наведи мишу на верхній лівий кут клітинки ІПН.")
+        print("  2. Знайди ПЕРШИЙ рядок з даними у стовпці 'Ідентифікатор' (самий верхній).")
+        print("  3. Наведи мишу на ВЕРХНІЙ ЛІВИЙ кут цього першого рядка.")
+        x, y = _capture_pos("Наведи мишу на верхній лівий кут першого рядка ІПН.")
         config["mia_ipn_cell_tl"] = [x, y]
     print()
 
     # ── Step 4 : MIA — нижній правий кут клітинки ІПН ───────────────────────
-    print(f"Крок 4 / {total_steps}  —  MIA: нижній правий кут клітинки ІПН")
+    print(f"Крок 4 / {total_steps}  —  MIA: нижній правий кут клітинки ІПН (той самий перший рядок)")
     cur_br = existing.get("mia_ipn_cell_br")
     if cur_br and _ask_skip("mia_ipn_cell_br", cur_br):
         config["mia_ipn_cell_br"] = cur_br
         print(f"  → збережено попереднє {cur_br}")
     else:
-        print("  1. Залишся у вікні MIA — та САМА клітинка 'Ідентифікатор'.")
+        print("  1. Залишся у вікні MIA — той САМИЙ перший рядок 'Ідентифікатор'.")
         print("  2. Наведи мишу на НИЖНІЙ ПРАВИЙ кут тієї самої клітинки.")
         x, y = _capture_pos("Наведи мишу на нижній правий кут клітинки ІПН.")
         config["mia_ipn_cell_br"] = [x, y]
     print()
 
-    # ── Step 5 : MIA — позиція галочки ──────────────────────────────────────
-    print(f"Крок 5 / {total_steps}  —  MIA: галочка поруч з клітинкою ІПН")
+    # ── Step 5 : MIA — нижній правий кут стовпця ІПН ────────────────────────
+    print(f"Крок 5 / {total_steps}  —  MIA: нижній правий кут стовпця ІПН (останній рядок)")
+    cur_col_br = existing.get("mia_ipn_col_br")
+    if cur_col_br and _ask_skip("mia_ipn_col_br", cur_col_br):
+        config["mia_ipn_col_br"] = cur_col_br
+        print(f"  → збережено попереднє {cur_col_br}")
+    else:
+        print("  1. Залишся у вікні MIA.")
+        print("  2. Знайди ОСТАННІЙ видимий рядок з даними у стовпці 'Ідентифікатор'.")
+        print("  3. Наведи мишу на НИЖНІЙ ПРАВИЙ кут цього останнього рядка.")
+        x, y = _capture_pos("Наведи мишу на нижній правий кут останнього рядка ІПН.")
+        config["mia_ipn_col_br"] = [x, y]
+    print()
+
+    # ── Step 6 : MIA — позиція галочки ──────────────────────────────────────
+    print(f"Крок 6 / {total_steps}  —  MIA: галочка поруч з клітинкою ІПН")
     cur_cb = existing.get("mia_checkbox_offset")
     if cur_cb and _ask_skip("mia_checkbox_offset", cur_cb):
         config["mia_checkbox_offset"] = cur_cb
         print(f"  → збережено попереднє {cur_cb}")
     else:
-        print("  1. Залишся у вікні MIA — той самий рядок.")
+        print("  1. Залишся у вікні MIA — перший рядок.")
         print("  2. Наведи мишу ТОЧНО на галочку зліва від цього рядка.")
         cx, cy = _capture_pos("Наведи мишу на галочку зліва від рядка.")
         tl = config["mia_ipn_cell_tl"]
@@ -167,9 +181,9 @@ def main():
         print(f"  ✓ Зміщення галочки: dx={dx}, dy={dy}")
     print()
 
-    # ── Step 6 (Windows only) : назва вікна MIA ─────────────────────────────
+    # ── Step 7 (Windows only) : назва вікна MIA ─────────────────────────────
     if not is_mac:
-        print(f"Крок 6 / {total_steps}  —  Назва вікна MIA (Windows)")
+        print(f"Крок 7 / {total_steps}  —  Назва вікна MIA (Windows)")
         cur_title = existing.get("mia_title_part", "Обіймання посад")
         if cur_title and _ask_skip("mia_title_part", cur_title):
             config["mia_title_part"] = cur_title

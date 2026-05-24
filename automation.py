@@ -60,6 +60,7 @@ def main() -> None:
     mia_title: str = cfg.get("mia_title_part", "Обіймання посад")
     cell_tl: list = cfg["mia_ipn_cell_tl"]
     cell_br: list = cfg["mia_ipn_cell_br"]
+    col_br: list | None = cfg.get("mia_ipn_col_br")
     cb_offset: list = cfg["mia_checkbox_offset"]
     delays: dict = cfg.get("delays", {})
     win_delay: float = delays.get("window_switch", 0.7)
@@ -69,6 +70,7 @@ def main() -> None:
     print(f"[CFG] Excel IPN клітинка : ({ipn_x},{ipn_y})")
     print(f"[CFG] MIA cell_tl        : {cell_tl}")
     print(f"[CFG] MIA cell_br        : {cell_br}")
+    print(f"[CFG] MIA col_br         : {col_br if col_br else '(не скалібрований — fallback 75%)'}")
     print(f"[CFG] checkbox_offset    : {cb_offset}")
     print(f"[CFG] mia_title          : {mia_title!r}")
     print(f"[CFG] batch_size         : {batch_size}")
@@ -113,7 +115,7 @@ def main() -> None:
                                   cell_tl=cell_tl, cell_br=cell_br)
 
                 print(f"  → шукаємо синій рядок…", flush=True)
-                row_top_y = find_blue_row(ipn, cell_tl, cell_br, mia_title)
+                row_top_y = find_blue_row(ipn, cell_tl, cell_br, mia_title, col_br=col_br)
 
                 if row_top_y is not None:
                     print(f"  → ЗНАЙДЕНО ✓ — ставимо галочку…", flush=True)

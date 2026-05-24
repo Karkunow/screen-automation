@@ -129,7 +129,8 @@ def wait_tooltip_gone(mia_title: str, timeout: float = 15.0,
         _move_mouse_away(cell_tl, cell_br)
 
 
-def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int | None:
+def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
+                  col_br: list | None = None) -> int | None:
     """Scan the MIA window for the dark-blue highlighted row and confirm the IPN.
 
     Returns the absolute screen Y coordinate of the TOP of the found row,
@@ -152,12 +153,17 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str) -> int
                        np.array([95, 60, 40]),
                        np.array([125, 255, 255]))
 
-    # Restrict to IPN column width, and to main table area only.
-    # The lower panel (e.g. "Дата початку" header) sits in the bottom ~25% of the
-    # window and has the same navy-blue colour — exclude it to avoid false positives.
+    # Restrict search to the calibrated IPN column rectangle:
+    #   x: left/right edges of the column (cell_tl[0] .. cell_br[0])
+    #   y: first data row (cell_tl[1]) .. last visible row (col_br[1])
+    #      Falls back to top-75% of window if col_br was not calibrated.
     col_mask = np.zeros_like(mask)
-    y_cutoff = int(img_bgr.shape[0] * 0.75)
-    col_mask[:y_cutoff, x1:x2] = mask[:y_cutoff, x1:x2]
+    y1 = max(0, cell_tl[1] - win_top - 2)
+    if col_br is not None:
+        y2 = min(img_bgr.shape[0], col_br[1] - win_top + 2)
+    else:
+        y2 = int(img_bgr.shape[0] * 0.75)
+    col_mask[y1:y2, x1:x2] = mask[y1:y2, x1:x2]
 
     # Find rows with enough blue pixels (at least 15% of column width)
     row_sums = col_mask.sum(axis=1)
