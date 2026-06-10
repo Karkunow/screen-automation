@@ -68,14 +68,17 @@ def _win_activate(title_fragment: str) -> bool:
 
         matches = gw.getWindowsWithTitle(title_fragment)  # type: ignore[attr-defined]
         if not matches:
+            all_titles = [w.title for w in gw.getAllWindows() if w.title.strip()]  # type: ignore[attr-defined]
+            print(f"  [WIN] вікно {title_fragment!r} не знайдено. Всі вікна: {all_titles[:15]}")
             return False
 
         hwnd = matches[0]._hWnd
         user32 = ctypes.windll.user32  # type: ignore[attr-defined]
         # SW_RESTORE (9) un-minimises the window if needed
         user32.ShowWindow(hwnd, 9)
-        user32.SetForegroundWindow(hwnd)
+        result = user32.SetForegroundWindow(hwnd)
+        print(f"  [WIN] SetForegroundWindow({title_fragment!r}) → {result}")
         return True
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"  [WIN] ПОМИЛКА _win_activate({title_fragment!r}): {e}")
     return False
