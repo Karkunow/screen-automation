@@ -89,6 +89,8 @@ def main() -> None:
 
     found_count = 0
     not_found_count = 0
+    consecutive_not_found = 0
+    MAX_CONSECUTIVE_NOT_FOUND = 10
     log_rows: list[tuple] = []
 
     try:
@@ -106,6 +108,7 @@ def main() -> None:
             if not ipn or not ipn.isdigit():
                 result = "не знайдено"
                 not_found_count += 1
+                consecutive_not_found += 1
                 log_rows.append((row + 1, ipn or "", "не знайдено"))
             else:
                 print(f"{label} ІПН: {ipn}", flush=True)
@@ -134,16 +137,23 @@ def main() -> None:
                     click_checkbox(row_top_y, cell_tl, cb_offset)
                     result = "знайдено"
                     found_count += 1
+                    consecutive_not_found = 0
                     log_rows.append((row + 1, ipn, "знайдено"))
                 else:
                     print(f"  → не знайдено")
                     result = "не знайдено"
                     not_found_count += 1
+                    consecutive_not_found += 1
                     log_rows.append((row + 1, ipn, "не знайдено"))
 
             # ── 3. Write result back to Excel ─────────────────────────
             focus_spreadsheet(delay=win_delay)
             write_result(result)
+
+            # ── Check consecutive not-found limit ─────────────────────
+            if consecutive_not_found >= MAX_CONSECUTIVE_NOT_FOUND:
+                print(f"\n  СТОП: {MAX_CONSECUTIVE_NOT_FOUND} підряд не знайдено — зупиняємо скрипт.")
+                break
 
             # ── 4. Batch confirm (every batch_size rows or at the end) ─
             batch_pos = row + 1
