@@ -70,11 +70,12 @@ def _screenshot_mia(mia_title: str):
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def type_ipn(ipn: str, cell_tl: list, delays: dict) -> None:
+def type_ipn(ipn: str, cell_tl: list, cell_br: list, delays: dict) -> None:
     """Click the IPN column cell in MIA and type the IPN character by character."""
-    x, y = cell_tl
-    print(f"  [TYPE] клік на клітинку MIA ({x},{y}), вводимо ІПН: {ipn}")
-    pyautogui.click(x, y)
+    cx = (cell_tl[0] + cell_br[0]) // 2
+    cy = (cell_tl[1] + cell_br[1]) // 2
+    print(f"  [TYPE] клік на центр клітинки MIA ({cx},{cy}), вводимо ІПН: {ipn}")
+    pyautogui.click(cx, cy)
     time.sleep(0.3)
     pyautogui.typewrite(ipn, interval=0.06)
     time.sleep(delays.get("after_type_ipn", 0.5))

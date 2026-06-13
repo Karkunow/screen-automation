@@ -16,6 +16,25 @@ import pyperclip
 _MOD = "command" if sys.platform == "darwin" else "ctrl"
 
 
+def _copy() -> None:
+    """Send Ctrl+C (Mac: Cmd+C) using virtual key codes on Windows.
+
+    pyautogui.hotkey('ctrl', 'c') sends the character currently mapped to 'c'
+    which changes with non-English keyboard layouts. keybd_event with
+    VK_C (0x43) always targets the physical C key regardless of layout.
+    """
+    if sys.platform != "darwin":
+        import ctypes
+        VK_CONTROL, VK_C, KEYUP = 0x11, 0x43, 0x0002
+        ke = ctypes.windll.user32.keybd_event  # type: ignore[attr-defined]
+        ke(VK_CONTROL, 0, 0, 0)
+        ke(VK_C, 0, 0, 0)
+        ke(VK_C, 0, KEYUP, 0)
+        ke(VK_CONTROL, 0, KEYUP, 0)
+    else:
+        pyautogui.hotkey("command", "c")
+
+
 def click_and_read(row: int, x: int, y: int, copy_delay: float = 0.4) -> str:
     """Click cell at (x, y), select all text inside, copy, return the plain-text value."""
     pyperclip.copy("")  # очистити буфер перед копіюванням
@@ -38,7 +57,7 @@ def click_and_read(row: int, x: int, y: int, copy_delay: float = 0.4) -> str:
 def read_current_cell(copy_delay: float = 0.4) -> str:
     """Copy the currently selected cell and return its plain-text value."""
     time.sleep(0.1)
-    pyautogui.hotkey(_MOD, "c")
+    _copy()
     time.sleep(copy_delay)
     if sys.platform == "darwin":
         pyautogui.press("escape")      # прибрати фокус з попередньої клітинки

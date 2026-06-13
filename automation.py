@@ -115,7 +115,7 @@ def main() -> None:
                 row_top_y = None
                 for attempt in range(1, 3):
                     print(f"  → вводимо ІПН у MIA… (спроба {attempt})", flush=True)
-                    type_ipn(ipn, cell_tl, delays)
+                    type_ipn(ipn, cell_tl, cell_br, delays)
 
                     print(f"  → чекаємо завершення пошуку…", flush=True)
                     wait_tooltip_gone(mia_title, timeout=tooltip_timeout,
