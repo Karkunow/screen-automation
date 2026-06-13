@@ -1,14 +1,14 @@
 {
   "platform": "windows",
   "row_count": 50,
-  "batch_size": 5,
+  "batch_size": 20,
   "delays": {
     "window_switch": 0.7,
     "after_copy": 0.4,
     "after_type_ipn": 0.5,
-    "tooltip_timeout": 8.0,
-    "batch_confirm_wait": 2.0,
-    "batch_reopen_wait": 10.0
+    "tooltip_timeout": 15.0,
+    "batch_confirm_wait": 3.0,
+    "batch_reopen_wait": 12.0
   },
   "ipn_cell_x": 0,
   "ipn_cell_y": 0,

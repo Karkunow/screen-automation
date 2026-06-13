@@ -72,32 +72,11 @@ def _win_activate(title_fragment: str) -> bool:
             print(f"  [WIN] вікно {title_fragment!r} не знайдено. Всі вікна: {all_titles[:15]}")
             return False
 
-        # Prefer the window whose title most closely matches the fragment:
-        # sort by length ascending so "Обіймання посад" beats
-        # "Відомості — Обіймання посад" when both contain the fragment.
-        matches = sorted(matches, key=lambda w: len(w.title))
-        print(f"  [WIN] знайдено {len(matches)} вікно(а) для {title_fragment!r}: "
-              f"{[w.title for w in matches]}")
         hwnd = matches[0]._hWnd
         user32 = ctypes.windll.user32  # type: ignore[attr-defined]
-
         # SW_RESTORE (9) un-minimises the window if needed
         user32.ShowWindow(hwnd, 9)
-
-        # SetForegroundWindow alone fails when targeting a child/owned window
-        # (Windows activates the owner instead). AttachThreadInput forces the
-        # OS to treat our thread as part of the target window's input queue,
-        # making BringWindowToTop + SetForegroundWindow work reliably.
-        fg_hwnd = user32.GetForegroundWindow()
-        fg_tid = user32.GetWindowThreadProcessId(fg_hwnd, None)
-        tgt_tid = user32.GetWindowThreadProcessId(hwnd, None)
-        if fg_tid != tgt_tid:
-            user32.AttachThreadInput(fg_tid, tgt_tid, True)
-        user32.BringWindowToTop(hwnd)
         result = user32.SetForegroundWindow(hwnd)
-        if fg_tid != tgt_tid:
-            user32.AttachThreadInput(fg_tid, tgt_tid, False)
-
         print(f"  [WIN] SetForegroundWindow({title_fragment!r}) → {result}")
         return True
     except Exception as e:
