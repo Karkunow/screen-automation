@@ -205,7 +205,9 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
         if _OCR_AVAILABLE:
             crop_y1 = max(0, g_start - 2)
             crop_y2 = min(img_bgr.shape[0], crop_y1 + cell_h)
-            crop = img_bgr[crop_y1:crop_y2, x1:x2]
+            # Expand right edge by 15px so the last digit isn't clipped
+            x2_ocr = min(img_bgr.shape[1], x2 + 15)
+            crop = img_bgr[crop_y1:crop_y2, x1:x2_ocr]
             if crop.size == 0:
                 continue
             # Grayscale + Otsu threshold: white text on blue bg → black text on white bg
@@ -234,7 +236,7 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
             pil_img = Image.fromarray(big)
             raw = pytesseract.image_to_string(
                 pil_img,
-                config="--psm 7 -c tessedit_char_whitelist=0123456789",
+                config="--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789",
             ).strip()
             digits = "".join(c for c in raw if c.isdigit())
             if digits != ipn:
