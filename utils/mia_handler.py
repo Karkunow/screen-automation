@@ -212,6 +212,11 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
             # Otsu finds optimal split between dark-blue bg and bright text automatically
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
             _, thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            # Auto-trim border lines: rows where >85% of pixels are black
+            # are table borders, not digit strokes — paint them white.
+            # Solid border lines hit ~100% fill; even dense digit rows rarely exceed 70%.
+            row_fill = (thr == 0).sum(axis=1) / max(1, thr.shape[1])
+            thr[row_fill > 0.85] = 255
             big = cv2.resize(thr, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
             # Add white padding so Tesseract doesn't cut off edge digits
             big = cv2.copyMakeBorder(big, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
