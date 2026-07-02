@@ -605,14 +605,19 @@ class App(tk.Tk):
 
     # ── Automation ─────────────────────────────────────────────────────────────
 
-    def _python_exe(self) -> str:
-        """Return python.exe path (not pythonw) for proper stdout capture."""
+    def _automation_cmd(self) -> list:
+        """Return Popen command list to launch automation.
+        Frozen exe: call automation.exe sitting next to app.exe.
+        Dev mode:   call python automation.py using the current interpreter.
+        """
+        if getattr(sys, 'frozen', False):
+            return [os.path.join(os.path.dirname(sys.executable), 'automation.exe')]
         exe = sys.executable
-        if os.path.basename(exe).lower() == "pythonw.exe":
-            candidate = os.path.join(os.path.dirname(exe), "python.exe")
+        if os.path.basename(exe).lower() == 'pythonw.exe':
+            candidate = os.path.join(os.path.dirname(exe), 'python.exe')
             if os.path.exists(candidate):
-                return candidate
-        return exe
+                exe = candidate
+        return [exe, 'automation.py']
 
     def _start_automation(self):
         if self._proc is not None:
@@ -620,7 +625,7 @@ class App(tk.Tk):
         env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
         try:
             self._proc = subprocess.Popen(
-                [self._python_exe(), "automation.py"],
+                self._automation_cmd(),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

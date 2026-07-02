@@ -1,6 +1,6 @@
 #define MyAppName      "Screen Automation"
 #define MyAppVersion   "1.0"
-#define MyDistDir      "dist"
+#define MyDistDir      "dist\screen_automation"
 
 [Setup]
 AppId={{B7C4D2E1-93FA-4A18-BC50-D3F1A62E8074}
@@ -24,45 +24,38 @@ ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
 Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "english";   MessagesFile: "compiler:Default.isl"
 
 [Files]
-; automation.exe + всi залежностi (Python, OpenCV, Tesseract, ...)
-Source: "{#MyDistDir}\automation\*"; DestDir: "{app}\automation"; \
+; app.exe + automation.exe + calibrate.exe + спiльний _internal/
+Source: "{#MyDistDir}\*"; DestDir: "{app}"; \
     Flags: recursesubdirs createallsubdirs ignoreversion
 
-; calibrate.exe + залежностi
-Source: "{#MyDistDir}\calibrate\*"; DestDir: "{app}\calibrate"; \
-    Flags: recursesubdirs createallsubdirs ignoreversion
-
-; Стартовий файл даних (тiльки якщо ще немає -- не перезаписувати дані)
+; Стартовий файл даних (не перезаписувати якщо вже є)
 Source: "big_list.csv"; DestDir: "{app}"; Flags: onlyifdoesntexist
 
 [Icons]
-; Робочий стiл
-Name: "{userdesktop}\Automation";  Filename: "{app}\automation\automation.exe"; \
-    WorkingDir: "{app}"; IconFilename: "{app}\automation\automation.exe"; \
+; Робочий стiл -- тiльки app.exe (головний GUI)
+Name: "{userdesktop}\Screen Automation"; \
+    Filename: "{app}\app.exe"; \
+    WorkingDir: "{app}"; \
     Comment: "Запустити автоматизацiю"
-Name: "{userdesktop}\Calibrate";   Filename: "{app}\calibrate\calibrate.exe"; \
-    WorkingDir: "{app}"; IconFilename: "{app}\calibrate\calibrate.exe"; \
-    Comment: "Калiбрування (запускати один раз)"
 
 ; Меню Пуск
-Name: "{group}\Automation";        Filename: "{app}\automation\automation.exe"; \
+Name: "{group}\Screen Automation"; \
+    Filename: "{app}\app.exe"; \
     WorkingDir: "{app}"
-Name: "{group}\Calibrate";         Filename: "{app}\calibrate\calibrate.exe"; \
-    WorkingDir: "{app}"
-Name: "{group}\Видалити";          Filename: "{uninstallexe}"
+Name: "{group}\Видалити"; \
+    Filename: "{uninstallexe}"
 
 [Run]
-; Запропонувати запустити калiбрування одразу пiсля встановлення
-Filename: "{app}\calibrate\calibrate.exe"; \
-    Description: "Запустити калiбрування зараз"; \
+; Запустити GUI пiсля встановлення
+Filename: "{app}\app.exe"; \
+    Description: "Запустити Screen Automation"; \
     WorkingDir: "{app}"; \
     Flags: postinstall nowait skipifsilent
 
 [UninstallDelete]
-; Видалити config.json та логи при деiнсталяцiї
 Type: files; Name: "{app}\config.json"
 Type: files; Name: "{app}\results_log.txt"
 Type: files; Name: "{app}\debug_*.png"

@@ -152,10 +152,12 @@ build.bat
 
 ```
 %LocalAppData%\Screen Automation\
-  automation\automation.exe    ← ярлик на робочому столі
-  calibrate\calibrate.exe      ← ярлик на робочому столі
+  app.exe           ← ярлик на робочому столі (головний GUI)
+  automation.exe    ← запускається автоматично з app.exe
+  calibrate.exe     ← запускається з GUI (кнопка "Калібрування")
+  _internal\        ← Python, OpenCV, Tesseract — все всередині
   big_list.csv
-  config.json                  ← створюється calibrate.exe при першому запуску
+  config.json       ← створюється при першому калібруванні
 ```
 
 Розмір інсталятора: ~100–150 МБ.
