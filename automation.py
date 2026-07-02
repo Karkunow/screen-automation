@@ -22,6 +22,9 @@ import time
 
 import pyautogui
 
+from utils.tesseract_path import setup as _setup_tesseract
+_setup_tesseract()  # must run before any pytesseract call; no-op outside frozen exe
+
 from utils.window_manager import focus_spreadsheet, focus_mia
 from utils.excel_reader import click_and_read, write_result
 from utils.mia_handler import (

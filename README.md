@@ -101,15 +101,85 @@ python automation.py
 
 ---
 
+---
+
+## Офлайн-встановлення на Windows (без інтернету)
+
+Якщо на цільовій машині немає інтернету — скористайся `install.bat`.
+
+**Крок 1 — на машині з інтернетом:**
+
+```
+python download_packages.py
+```
+
+Скрипт завантажить Python-інсталятор, Tesseract, tessdata та всі pip-пакети
+у папки `installers\` та `packages\`.
+
+**Крок 2 — скопіювати весь проект** на цільову машину (флешка / мережа).
+
+**Крок 3 — на цільовій машині:**
+
+Правий клік на `install.bat` → **"Запуск від імені адміністратора"** → далі за інструкціями.
+
+Скрипт сам встановить Python, Tesseract, мовні пакети та створить `.venv` з залежностями.
+
+---
+
+## Збірка Windows EXE-інсталятора
+
+Дозволяє зробити єдиний `ScreenAutomation_Setup.exe` — без Python, без pip, без нічого.
+Користувач просто запускає інсталятор і отримує ярлики на робочому столі.
+
+**Потрібно встановити один раз (на машині розробника):**
+
+- [PyInstaller](https://pyinstaller.org/) — встановлюється автоматично через `build.bat`
+- [Inno Setup 6](https://jrsoftware.org/isdl.php) — безкоштовний, встановити вручну
+
+**Зібрати:**
+
+```
+build.bat
+```
+
+Скрипт:
+1. Встановить PyInstaller у `.venv` якщо відсутній
+2. Зберe `automation.exe` (з вбудованим Tesseract)
+3. Зберe `calibrate.exe`
+4. Скомпілює `installer_output\ScreenAutomation_Setup.exe` через Inno Setup
+
+**Що отримає користувач після встановлення:**
+
+```
+%LocalAppData%\Screen Automation\
+  automation\automation.exe    ← ярлик на робочому столі
+  calibrate\calibrate.exe      ← ярлик на робочому столі
+  big_list.csv
+  config.json                  ← створюється calibrate.exe при першому запуску
+```
+
+Розмір інсталятора: ~100–150 МБ.
+Для деінсталяції — стандартно через "Програми та компоненти" Windows.
+
+---
+
 ## Структура проекту
 
 ```
-automation.py        — головний скрипт
-calibrate.py         — одноразове калібрування координат
-config.json          — збережені координати та налаштування
-requirements.txt     — залежності Python
+automation.py          — головний скрипт
+calibrate.py           — одноразове калібрування координат
+config.json            — збережені координати та налаштування
+requirements.txt       — залежності Python
+install.bat            — офлайн-встановлення (Python + Tesseract + venv)
+build.bat              — збірка EXE-інсталятора через PyInstaller + Inno Setup
+automation.spec        — PyInstaller конфіг для automation.exe
+calibrate.spec         — PyInstaller конфіг для calibrate.exe
+setup.iss              — Inno Setup скрипт для фінального інсталятора
 utils/
-  excel_reader.py    — читання/запис у Excel/Numbers
-  sheets_handler.py  — взаємодія з Google Sheets
-  window_manager.py  — перемикання вікон
+  excel_reader.py      — читання/запис у Excel/Numbers
+  sheets_handler.py    — взаємодія з Google Sheets
+  window_manager.py    — перемикання вікон
+  tesseract_path.py    — налаштування шляху до Tesseract у frozen exe
+installers/            — офлайн-інсталятори (заповнюється download_packages.py)
+packages/              — pip-пакети для офлайн-встановлення
 ```
