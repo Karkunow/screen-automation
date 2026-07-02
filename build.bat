@@ -10,21 +10,60 @@ echo.
 
 set "ROOT=%~dp0"
 set "VENV=%ROOT%.venv"
-set "PY=%VENV%\Scripts\python.exe"
+set "VENV_SITE=%VENV%\Lib\site-packages"
 
-rem pip.exe / pyinstaller.exe мiстять захардкодженi шляхи i не працюють
-rem якщо venv перенесено з iншого комп'ютера -- використовуємо python -m
+rem Не використовуємо .venv\Scripts\python.exe -- вiн падає з "No Python at ?????"
+rem коли iм'я користувача мiстить не-ASCII символи (кирилиця тощо).
+rem Замiсть цього: знаходимо базовий Python i пiдключаємо пакети venv через PYTHONPATH.
 
-if not exist "%PY%" (
-    echo ПОМИЛКА: .venv не знайдено. Спочатку запусти install.bat
+:: ── Знайти базовий Python ─────────────────────────────────────────────────
+set "PY="
+
+rem py.exe launcher -- найнадiйнiший спосiб
+py --version >nul 2>&1
+if %errorlevel% equ 0 (
+    for /f "tokens=*" %%v in ('py -c "import sys; print(sys.executable)" 2^>nul') do set "PY=%%v"
+)
+
+rem Вiдомi шляхи (per-user та system)
+if not defined PY for %%p in (
+    "%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    "%ProgramFiles%\Python313\python.exe"
+    "%ProgramFiles%\Python312\python.exe"
+    "%ProgramFiles%\Python311\python.exe"
+    "C:\Python313\python.exe"
+    "C:\Python312\python.exe"
+    "C:\Python311\python.exe"
+) do if not defined PY if exist %%p set "PY=%%~p"
+
+if not defined PY (
+    echo ПОМИЛКА: Python не знайдено.
+    echo Встанови Python або запусти install.bat спочатку.
+    pause & exit /b 1
+)
+echo   Python: !PY!
+
+:: ── Перевiрити наявнiсть пакетiв venv ────────────────────────────────────
+if not exist "%VENV_SITE%\" (
+    echo ПОМИЛКА: .venv\Lib\site-packages не знайдено.
+    echo Запусти install.bat спочатку.
     pause & exit /b 1
 )
 
-:: ── PyInstaller -- знайти або встановити ────────────────────────────────
-rem Варiант 1: вже є у venv
-set "PYINST_CMD=%PY% -m PyInstaller"
-"%PY%" -m pip show pyinstaller >nul 2>&1
-if %errorlevel% equ 0 goto :build
+rem Пакети venv доступнi через PYTHONPATH -- без запуску venv python.exe
+set "PYTHONPATH=%VENV_SITE%"
+
+:: ── PyInstaller -- перевiрити або встановити ─────────────────────────────
+set "PYINST_CMD="
+
+rem Варiант 1: вже є у venv (перевiряємо папку, не через pip)
+if exist "%VENV_SITE%\PyInstaller\" (
+    set "PYINST_CMD=!PY! -m PyInstaller"
+    goto :build
+)
 
 rem Варiант 2: є глобально
 where pyinstaller >nul 2>&1
@@ -34,16 +73,18 @@ if %errorlevel% equ 0 (
 )
 
 rem Варiант 3: встановити у venv (потрiбен iнтернет)
-echo Встановлення PyInstaller у .venv...
-"%PY%" -m pip install pyinstaller
+echo Встановлення PyInstaller...
+"!PY!" -m pip install --target "%VENV_SITE%" pyinstaller
 if %errorlevel% neq 0 (
-    echo ПОМИЛКА: PyInstaller не знайдено i не вдалося встановити.
+    echo ПОМИЛКА: не вдалося встановити PyInstaller.
     echo Встанови вручну: pip install pyinstaller
     pause & exit /b 1
 )
+set "PYINST_CMD=!PY! -m PyInstaller"
 
 :build
 :: ── Збiрка (app + automation + calibrate в одну папку) ───────────────────
+echo.
 echo [1/2] Збiрка exe-файлiв (PyInstaller)...
 !PYINST_CMD! app.spec --noconfirm --distpath "%ROOT%dist"
 if %errorlevel% neq 0 (
