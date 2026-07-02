@@ -16,9 +16,15 @@ Safety
 """
 
 import datetime
+import io
 import json
 import sys
 import time
+
+# Frozen exe on Windows defaults to cp1251 — force UTF-8 so Ukrainian text prints correctly.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 import pyautogui
 
