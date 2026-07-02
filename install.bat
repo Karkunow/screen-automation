@@ -131,7 +131,7 @@ if not exist "%VENV%\Scripts\python.exe" (
 )
 
 echo   Встановлення пакетiв...
-"%VENV%\Scripts\pip" install --no-index --find-links="%PACKAGES%" -r "%ROOT%requirements.txt"
+"%VENV%\Scripts\python.exe" -m pip install --no-index --find-links="%PACKAGES%" -r "%ROOT%requirements.txt"
 if %errorlevel% neq 0 (
     echo   ПОМИЛКА при встановленнi пакетiв.
     echo   Можливо пакети у packages\ не вiдповiдають версiї Python.

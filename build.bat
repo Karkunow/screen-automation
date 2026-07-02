@@ -10,19 +10,21 @@ echo.
 
 set "ROOT=%~dp0"
 set "VENV=%ROOT%.venv"
-set "PIP=%VENV%\Scripts\pip"
-set "PYINST=%VENV%\Scripts\pyinstaller"
+set "PY=%VENV%\Scripts\python.exe"
 
-if not exist "%VENV%\Scripts\python.exe" (
+rem pip.exe / pyinstaller.exe мiстять захардкодженi шляхи i не працюють
+rem якщо venv перенесено з iншого комп'ютера -- використовуємо python -m
+
+if not exist "%PY%" (
     echo ПОМИЛКА: .venv не знайдено. Спочатку запусти install.bat
     pause & exit /b 1
 )
 
 :: ── PyInstaller ───────────────────────────────────────────────────────────
-"%PIP%" show pyinstaller >nul 2>&1
+"%PY%" -m pip show pyinstaller >nul 2>&1
 if %errorlevel% neq 0 (
     echo Встановлення PyInstaller...
-    "%PIP%" install pyinstaller
+    "%PY%" -m pip install pyinstaller
     if %errorlevel% neq 0 (
         echo ПОМИЛКА при встановленнi PyInstaller.
         pause & exit /b 1
@@ -31,7 +33,7 @@ if %errorlevel% neq 0 (
 
 :: ── Збiрка (app + automation + calibrate в одну папку) ───────────────────
 echo [1/2] Збiрка exe-файлiв (PyInstaller)...
-"%PYINST%" app.spec --noconfirm --distpath "%ROOT%dist"
+"%PY%" -m PyInstaller app.spec --noconfirm --distpath "%ROOT%dist"
 if %errorlevel% neq 0 (
     echo ПОМИЛКА при збiрцi.
     pause & exit /b 1
