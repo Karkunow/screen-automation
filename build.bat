@@ -20,20 +20,32 @@ if not exist "%PY%" (
     pause & exit /b 1
 )
 
-:: ── PyInstaller ───────────────────────────────────────────────────────────
+:: ── PyInstaller -- знайти або встановити ────────────────────────────────
+rem Варiант 1: вже є у venv
+set "PYINST_CMD=%PY% -m PyInstaller"
 "%PY%" -m pip show pyinstaller >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Встановлення PyInstaller...
-    "%PY%" -m pip install pyinstaller
-    if %errorlevel% neq 0 (
-        echo ПОМИЛКА при встановленнi PyInstaller.
-        pause & exit /b 1
-    )
+if %errorlevel% equ 0 goto :build
+
+rem Варiант 2: є глобально
+where pyinstaller >nul 2>&1
+if %errorlevel% equ 0 (
+    set "PYINST_CMD=pyinstaller"
+    goto :build
 )
 
+rem Варiант 3: встановити у venv (потрiбен iнтернет)
+echo Встановлення PyInstaller у .venv...
+"%PY%" -m pip install pyinstaller
+if %errorlevel% neq 0 (
+    echo ПОМИЛКА: PyInstaller не знайдено i не вдалося встановити.
+    echo Встанови вручну: pip install pyinstaller
+    pause & exit /b 1
+)
+
+:build
 :: ── Збiрка (app + automation + calibrate в одну папку) ───────────────────
 echo [1/2] Збiрка exe-файлiв (PyInstaller)...
-"%PY%" -m PyInstaller app.spec --noconfirm --distpath "%ROOT%dist"
+!PYINST_CMD! app.spec --noconfirm --distpath "%ROOT%dist"
 if %errorlevel% neq 0 (
     echo ПОМИЛКА при збiрцi.
     pause & exit /b 1
