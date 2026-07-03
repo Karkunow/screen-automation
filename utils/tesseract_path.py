@@ -13,6 +13,11 @@ def setup() -> None:
         cmd = os.path.join(base, 'tesseract', 'tesseract.exe')
         if os.path.exists(cmd):
             pytesseract.pytesseract.tesseract_cmd = cmd
-            os.environ.setdefault('TESSDATA_PREFIX', os.path.join(base, 'tesseract'))
+            # Tesseract appends lang+".traineddata" directly to TESSDATA_PREFIX,
+            # so point it at the tessdata/ subfolder where the files actually live.
+            os.environ.setdefault(
+                'TESSDATA_PREFIX',
+                os.path.join(base, 'tesseract', 'tessdata'),
+            )
     except Exception:
         pass
