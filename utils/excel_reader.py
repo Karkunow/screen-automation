@@ -78,26 +78,26 @@ def write_result(text: str) -> None:
 
     Uses clipboard paste so Ukrainian text works regardless of keyboard layout.
     """
-    # Cursor is already on col B from the previous click_and_read
-    # Move one column right → col C
+    print(f"  [XLS] записуємо результат: {text!r}", flush=True)
+    # On Windows: press Escape first to clear any pending copy-mode (marching ants)
+    # or autocomplete state left over from the previous read. Safe no-op otherwise.
+    if sys.platform != "darwin":
+        pyautogui.press("escape")
+        time.sleep(0.1)
+    # Cursor is on col B — move one column right → col C
     pyautogui.press("right")
-    pyautogui.keyUp("fn")
     time.sleep(0.2)
     # Paste via clipboard (safe for non-ASCII / Ukrainian)
     pyperclip.copy(text)
     pyautogui.hotkey(_MOD, "v")
-    time.sleep(0.2)
-    # Exit edit mode and return to col B
-    #pyautogui.press("escape")
-    #time.sleep(0.1)
+    time.sleep(0.3)
+    # Return to col B
     pyautogui.press("left")
-    pyautogui.keyUp("fn")
-    time.sleep(0.1)
+    time.sleep(0.15)
+    print(f"  [XLS] результат записано", flush=True)
 
 
 def move_down() -> None:
     """Move the selection one row down with the Down arrow key."""
     pyautogui.press("down")
-    time.sleep(0.15)
-    pyautogui.keyUp("fn")
-    time.sleep(0.15)
+    time.sleep(0.3)
