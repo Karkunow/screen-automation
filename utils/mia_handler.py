@@ -253,8 +253,9 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
     return None
 
 
-def click_checkbox(row_top_y: int, cell_tl: list, checkbox_offset: list) -> None:
-    """Click the checkbox to the left of the found row.
+def click_checkbox(row_top_y: int, cell_tl: list, checkbox_offset: list,
+                   mia_title: str = "Обіймання посад") -> None:
+    """Click the checkbox to the left of the found row, unless already checked.
 
     checkbox_offset = [dx, dy] recorded during calibration as:
         dx = checkbox_x - cell_tl_x
@@ -264,6 +265,9 @@ def click_checkbox(row_top_y: int, cell_tl: list, checkbox_offset: list) -> None
     check_x = cell_tl[0] + dx
     check_y = row_top_y + dy
     print(f"  [CHK] кліком на галочку: ({check_x},{check_y})  cell_tl={cell_tl}  offset=({dx},{dy})  row_top_y={row_top_y}")
+    if _is_checkbox_checked(check_x, check_y, mia_title):
+        print(f"  [CHK] вже відмічено — пропускаємо клік")
+        return
     pyautogui.click(check_x, check_y)
     time.sleep(0.2)
     print(f"  [CHK] клік виконано")
@@ -298,3 +302,42 @@ def _yellow_present(mia_title: str) -> bool:
                        np.array([40, 150, 255]))
     count = int(cv2.countNonZero(mask))
     return count >= 50
+
+
+def _is_checkbox_checked(check_x: int, check_y: int, mia_title: str) -> bool:
+    """Return True if the checkbox at screen position (check_x, check_y) is already checked.
+
+    Logic: crop the inner ±5 px of the checkbox (avoids the border), convert to grayscale.
+      - Unchecked: white interior → many very-light pixels, almost no dark pixels.
+      - Checked:   white interior + dark checkmark stroke → both light AND dark pixels present.
+    Falls back to False on any error so the caller always clicks when uncertain.
+    """
+    try:
+        img_bgr, win_left, win_top = _screenshot_mia(mia_title)
+        cx = check_x - win_left
+        cy = check_y - win_top
+        pad = 5  # ±5 px → 10×10 region (inner area of checkbox, border excluded)
+        x1 = max(0, cx - pad)
+        y1 = max(0, cy - pad)
+        x2 = min(img_bgr.shape[1], cx + pad)
+        y2 = min(img_bgr.shape[0], cy + pad)
+        crop = img_bgr[y1:y2, x1:x2]
+        if crop.size == 0:
+            return False
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        total = gray.size
+        mean_val = float(gray.mean())
+        medium_gray = int(((gray > 80) & (gray < 200)).sum())
+        print(f"  [CHK] crop {gray.shape}  mean={mean_val:.1f}  medium={medium_gray}/{total}")
+        # Save crop for debugging (overwritten each call)
+        try:
+            import os
+            cv2.imwrite("debug_checkbox.png", crop)
+        except Exception:
+            pass
+        # Unchecked: white interior → mean ≈ 255.
+        # Checked:   gray background with white checkmark → mean ≈ 160, medium-gray > 30%.
+        return mean_val < 220 and medium_gray > int(total * 0.20)
+    except Exception as exc:
+        print(f"  [CHK] помилка перевірки: {exc} — кликаємо")
+        return False

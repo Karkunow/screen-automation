@@ -143,7 +143,7 @@ def main() -> None:
 
                 if row_top_y is not None:
                     print(f"  → ЗНАЙДЕНО ✓ — ставимо галочку…", flush=True)
-                    click_checkbox(row_top_y, cell_tl, cb_offset)
+                    click_checkbox(row_top_y, cell_tl, cb_offset, mia_title)
                     result = "знайдено"
                     found_count += 1
                     consecutive_not_found = 0
