@@ -1,91 +1,85 @@
 """
-test_checkbox.py  —  calibrate checkbox detection thresholds.
+test_checkbox.py  —  verify checkbox detection on a real row screenshot.
 
-Loads img/checkbox_unchecked.png, img/checkbox_checked.png, and an optional
-extra image (argv[1], default: debug_crop_orig.png) and prints pixel stats
-for the inner region of each, then simulates the detection logic.
+Simulates _is_checkbox_checked logic directly on a saved row image.
 
 Usage:
-    python test_checkbox.py [image_path]
+    python test_checkbox.py <image_path>
+
+Example:
+    python test_checkbox.py debug_crop_orig.png
 """
 
 import sys
-import os
 import cv2
 import numpy as np
 
 
-def analyze(label: str, img_bgr: np.ndarray, pad: int = 5) -> None:
-    """Crop centre ±pad px, print grayscale stats, report checked/unchecked."""
-    h, w = img_bgr.shape[:2]
-    cx, cy = w // 2, h // 2
-    x1, y1 = max(0, cx - pad), max(0, cy - pad)
-    x2, y2 = min(w, cx + pad), min(h, cy + pad)
-    crop = img_bgr[y1:y2, x1:x2]
-    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    total = gray.size
+def detect(img_bgr: np.ndarray) -> None:
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-    very_light   = int((gray > 200).sum())   # white (unchecked interior)
-    medium_gray  = int(((gray > 80) & (gray < 200)).sum())  # gray (checked bg)
-    very_dark    = int((gray < 80).sum())    # dark border / shadow
+    h = gray.shape[0]
+    border = ((gray >= 140) & (gray <= 190)).astype(np.uint8)
 
-    mean_val = float(gray.mean())
-    std_val  = float(gray.std())
+    # Drop full-height vertical separators
+    col_sums = border.sum(axis=0)
+    cb_cols = np.where((col_sums >= 4) & (col_sums < int(h * 0.9)))[0]
+    print(f"col_sums: {list(enumerate(col_sums.tolist()))}")
+    print(f"checkbox candidate cols: {cb_cols.tolist()}")
 
-    # Detection logic variants
-    # A: original (dark+light) — WRONG: checked box is gray, not dark+white
-    det_a = very_dark > 10 and very_light > int(total * 0.25)
-    # B: gray-based  (checked = lots of medium-gray pixels)
-    det_b = medium_gray > int(total * 0.30)
-    # C: mean-based  (unchecked = very bright interior, mean > 220)
-    det_c = mean_val < 220
+    if len(cb_cols) < 2:
+        print("ERROR: checkbox border cols not found")
+        return
 
-    print(f"\n{'─'*48}")
-    print(f"  {label}")
-    print(f"  crop {gray.shape}  total={total}")
-    print(f"  very_light (>200)  : {very_light:3d}  ({100*very_light/total:.0f}%)")
-    print(f"  medium_gray(80-200): {medium_gray:3d}  ({100*medium_gray/total:.0f}%)")
-    print(f"  very_dark  (<80)   : {very_dark:3d}  ({100*very_dark/total:.0f}%)")
-    print(f"  mean={mean_val:.1f}  std={std_val:.1f}")
-    print(f"  → A (dark+light)  : {'CHECKED' if det_a else 'unchecked'}")
-    print(f"  → B (medium>30%)  : {'CHECKED' if det_b else 'unchecked'}")
-    print(f"  → C (mean<220)    : {'CHECKED' if det_c else 'unchecked'}")
+    left_x  = int(cb_cols[0])
+    right_x = int(cb_cols[-1])
 
-    # Save annotated crop at 8× zoom
-    out = cv2.resize(crop, (crop.shape[1]*8, crop.shape[0]*8), interpolation=cv2.INTER_NEAREST)
-    safe = label.replace(" ", "_").replace("/", "_").replace(":", "").replace("(", "").replace(")", "")
-    cv2.imwrite(f"debug_cb_{safe}.png", out)
-    print(f"  → saved debug_cb_{safe}.png  (8× zoom)")
+    region   = border[:, left_x:right_x + 1]
+    row_sums = region.sum(axis=1)
+    border_rows = np.where(row_sums >= (right_x - left_x))[0]
+    print(f"row_sums in [{left_x}..{right_x}]: {list(enumerate(row_sums.tolist()))}")
+    print(f"border rows: {border_rows.tolist()}")
 
+    if len(border_rows) < 2:
+        print("ERROR: horizontal borders not found")
+        return
 
-def load(path: str):
-    img = cv2.imread(path)
-    if img is None:
-        print(f"  [!] не вдалося завантажити: {path}")
-    return img
+    top_y    = int(border_rows[0])
+    bottom_y = int(border_rows[-1])
+
+    ix1, iy1 = left_x + 2, top_y + 2
+    ix2, iy2 = right_x - 1, bottom_y - 1
+
+    interior = gray[iy1:iy2, ix1:ix2]
+    total    = interior.size
+    white    = int((interior > 200).sum())
+    ratio    = white / total if total else 0
+
+    print(f"\ncheckbox border: ({left_x},{top_y}) → ({right_x},{bottom_y})")
+    print(f"interior crop:   ({ix1},{iy1}) → ({ix2},{iy2})  shape={interior.shape}")
+    print(f"білих пікселів:  {white}/{total} = {100*ratio:.0f}%")
+    print(f"→ {'unchecked' if ratio >= 0.90 else 'CHECKED'}")
+
+    # Save annotated image at 8×
+    out = cv2.resize(img_bgr, (img_bgr.shape[1]*8, img_bgr.shape[0]*8),
+                     interpolation=cv2.INTER_NEAREST)
+    cv2.rectangle(out, (left_x*8, top_y*8), (right_x*8, bottom_y*8), (0, 0, 255), 2)
+    cv2.imwrite("debug_cb_result.png", out)
+    print("→ debug_cb_result.png saved (8× + red rect on detected checkbox)")
 
 
 def main():
-    root = os.path.dirname(os.path.abspath(__file__))
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(1)
 
-    items = [
-        ("unchecked img", os.path.join(root, "img", "checkbox_unchecked.png")),
-        ("checked   img", os.path.join(root, "img", "checkbox_checked.png")),
-    ]
+    img = cv2.imread(sys.argv[1])
+    if img is None:
+        print(f"ERROR: cannot load {sys.argv[1]}")
+        sys.exit(1)
 
-    extra = sys.argv[1] if len(sys.argv) > 1 else os.path.join(root, "debug_crop_orig.png")
-    items.append((f"extra_{os.path.basename(extra)}", extra))
-
-    print("Checkbox detection threshold test")
-    print("=" * 48)
-    for label, path in items:
-        img = load(path)
-        if img is not None:
-            analyze(label, img)
-    print(f"\n{'─'*48}")
-    print("Recommendation:")
-    print("  Use logic B (medium_gray > 30%) if checked box has gray background.")
-    print("  Use logic C (mean < 220)        as a simpler alternative.")
+    print(f"Image: {sys.argv[1]}  {img.shape[1]}×{img.shape[0]}\n")
+    detect(img)
 
 
 if __name__ == "__main__":

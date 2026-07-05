@@ -253,7 +253,8 @@ def find_blue_row(ipn: str, cell_tl: list, cell_br: list, mia_title: str,
     return None
 
 
-def click_checkbox(row_top_y: int, cell_tl: list, checkbox_offset: list,
+def click_checkbox(row_top_y: int, cell_tl: list, cell_br: list,
+                   checkbox_offset: list,
                    mia_title: str = "Обіймання посад") -> None:
     """Click the checkbox to the left of the found row, unless already checked.
 
@@ -265,7 +266,7 @@ def click_checkbox(row_top_y: int, cell_tl: list, checkbox_offset: list,
     check_x = cell_tl[0] + dx
     check_y = row_top_y + dy
     print(f"  [CHK] кліком на галочку: ({check_x},{check_y})  cell_tl={cell_tl}  offset=({dx},{dy})  row_top_y={row_top_y}")
-    if _is_checkbox_checked(check_x, check_y, mia_title):
+    if _is_checkbox_checked(row_top_y, cell_tl, cell_br, mia_title):
         print(f"  [CHK] вже відмічено — пропускаємо клік")
         return
     pyautogui.click(check_x, check_y)
@@ -304,40 +305,86 @@ def _yellow_present(mia_title: str) -> bool:
     return count >= 50
 
 
-def _is_checkbox_checked(check_x: int, check_y: int, mia_title: str) -> bool:
-    """Return True if the checkbox at screen position (check_x, check_y) is already checked.
+def _is_checkbox_checked(row_top_y: int, cell_tl: list, cell_br: list,
+                         mia_title: str) -> bool:
+    """Return True if the checkbox in the highlighted row is already checked.
 
-    Logic: crop the inner ±5 px of the checkbox (avoids the border), convert to grayscale.
-      - Unchecked: white interior → many very-light pixels, almost no dark pixels.
-      - Checked:   white interior + dark checkmark stroke → both light AND dark pixels present.
+    Finds the checkbox by scanning the row strip (left of the IPN column) for
+    a gray rectangular border (the checkbox outline).  Crops its interior and
+    counts white pixels — unchecked = ~100% white, checked = significantly less.
     Falls back to False on any error so the caller always clicks when uncertain.
     """
     try:
         img_bgr, win_left, win_top = _screenshot_mia(mia_title)
-        cx = check_x - win_left
-        cy = check_y - win_top
-        pad = 5  # ±5 px → 10×10 region (inner area of checkbox, border excluded)
-        x1 = max(0, cx - pad)
-        y1 = max(0, cy - pad)
-        x2 = min(img_bgr.shape[1], cx + pad)
-        y2 = min(img_bgr.shape[0], cy + pad)
-        crop = img_bgr[y1:y2, x1:x2]
-        if crop.size == 0:
+
+        cell_h = max(8, cell_br[1] - cell_tl[1])
+        row_y1 = max(0, row_top_y - win_top)
+        row_y2 = min(img_bgr.shape[0], row_y1 + cell_h)
+        # search only left of the IPN column
+        col_x = max(1, cell_tl[0] - win_left)
+
+        strip = img_bgr[row_y1:row_y2, 0:col_x]
+        if strip.size == 0:
             return False
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        total = gray.size
-        mean_val = float(gray.mean())
-        medium_gray = int(((gray > 80) & (gray < 200)).sum())
-        print(f"  [CHK] crop {gray.shape}  mean={mean_val:.1f}  medium={medium_gray}/{total}")
-        # Save crop for debugging (overwritten each call)
+
+        gray = cv2.cvtColor(strip, cv2.COLOR_BGR2GRAY)
+        h = gray.shape[0]
+
+        # Gray border pixels: 140-190
+        border = ((gray >= 140) & (gray <= 190)).astype(np.uint8)
+
+        # Exclude full-height vertical separator lines (col_sum >= 90% of height).
+        # Checkbox side borders only span the checkbox height, not the full row.
+        col_sums = border.sum(axis=0)
+        cb_cols = np.where((col_sums >= 4) & (col_sums < int(h * 0.9)))[0]
+
+        if len(cb_cols) < 2:
+            print(f"  [CHK] рамку чекбоксу не знайдено — кликаємо")
+            return False
+
+        left_x  = int(cb_cols[0])
+        right_x = int(cb_cols[-1])
+
+        if right_x - left_x < 4:
+            print(f"  [CHK] чекбокс занадто вузький — кликаємо")
+            return False
+
+        # Top/bottom border rows: within left_x..right_x, whole row is gray
+        region = border[:, left_x:right_x + 1]
+        row_sums = region.sum(axis=1)
+        border_rows = np.where(row_sums >= (right_x - left_x))[0]
+
+        if len(border_rows) < 2:
+            print(f"  [CHK] горизонтальну рамку не знайдено — кликаємо")
+            return False
+
+        top_y    = int(border_rows[0])
+        bottom_y = int(border_rows[-1])
+
+        # Interior: 2 px inside each edge
+        ix1, iy1 = left_x + 2, top_y + 2
+        ix2, iy2 = right_x - 1, bottom_y - 1
+
+        if ix2 <= ix1 or iy2 <= iy1:
+            return False
+
+        interior = gray[iy1:iy2, ix1:ix2]
+        total = interior.size
+        white = int((interior > 200).sum())
+        ratio = white / total
+
+        print(f"  [CHK] чекбокс ({left_x},{top_y})-({right_x},{bottom_y})"
+              f"  interior {interior.shape}  білих={white}/{total} ({100*ratio:.0f}%)")
+
         try:
             import os
-            cv2.imwrite("debug_checkbox.png", crop)
+            dbg = strip.copy()
+            cv2.rectangle(dbg, (left_x, top_y), (right_x, bottom_y), (0, 0, 255), 1)
+            cv2.imwrite("debug_checkbox.png", dbg)
         except Exception:
             pass
-        # Unchecked: white interior → mean ≈ 255.
-        # Checked:   gray background with white checkmark → mean ≈ 160, medium-gray > 30%.
-        return mean_val < 220 and medium_gray > int(total * 0.20)
+
+        return ratio < 0.90
     except Exception as exc:
         print(f"  [CHK] помилка перевірки: {exc} — кликаємо")
         return False
